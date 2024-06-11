@@ -219,6 +219,46 @@ class Game {
         }
     }
 }
+function addSwipeListeners(game) {
+    let touchstartX = 0;
+    let touchstartY = 0;
+    let touchendX = 0;
+    let touchendY = 0;
+    function handleGesture() {
+        const diffX = touchendX - touchstartX;
+        const diffY = touchendY - touchstartY;
+        const absDiffX = Math.abs(diffX);
+        const absDiffY = Math.abs(diffY);
+        if (game.isGameActive()) {
+            if (absDiffX > absDiffY) {
+                if (diffX > 0) {
+                    game.move(Moves.RIGHT);
+                }
+                else {
+                    game.move(Moves.LEFT);
+                }
+            }
+            else {
+                if (diffY > 0) {
+                    game.move(Moves.DOWN);
+                }
+                else {
+                    game.move(Moves.UP);
+                }
+            }
+            printStateOnTiles(cards, score, game);
+        }
+    }
+    document.addEventListener('touchstart', (e) => {
+        touchstartX = e.changedTouches[0].screenX;
+        touchstartY = e.changedTouches[0].screenY;
+    });
+    document.addEventListener('touchend', (e) => {
+        touchendX = e.changedTouches[0].screenX;
+        touchendY = e.changedTouches[0].screenY;
+        handleGesture();
+    });
+}
 function getTileColor(value) {
     switch (value) {
         case 2: return "#eee4da";
@@ -272,6 +312,7 @@ const cards = document.querySelectorAll('.card');
 const score = document.getElementById('score');
 const newGameButton = document.getElementById('newGameBtn');
 printStateOnTiles(cards, score, game);
+addSwipeListeners(game);
 document.onkeydown = function (e) {
     if (game.isGameActive()) {
         switch (e.keyCode) {
@@ -296,5 +337,6 @@ newGameButton === null || newGameButton === void 0 ? void 0 : newGameButton.addE
     if (confirmed) {
         game = new Game();
         printStateOnTiles(cards, score, game);
+        addSwipeListeners(game);
     }
 });
