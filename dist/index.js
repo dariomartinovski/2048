@@ -19,6 +19,7 @@ class Game {
         this.state = new Array(16).fill(0);
         this.gameStatus = true;
         this.score = 0;
+        this.highScore = parseInt(localStorage.getItem("highScore") || "0");
         // add random inital block value
         this.addRandomTile();
     }
@@ -42,9 +43,28 @@ class Game {
     getScore() {
         return this.score;
     }
+    // UPDATE THE SCORE
+    updateScore() {
+        this.score = this.state.reduce((curr, prev) => curr + prev, 0);
+    }
+    // GET THE HIGHSCORE
+    getHighScore() {
+        return this.highScore;
+    }
+    // UPDATE THE HIGHSCORE
+    updateHighScore() {
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('highScore', this.highScore.toString());
+        }
+    }
     // CHECK IF GAME IS STILL ACTIVE
     isGameActive() {
-        return this.gameStatus;
+        let result = this.gameStatus;
+        // UPDATE THE HIGHSCORE IF THE GAME IS FINISHED
+        if (!this.gameStatus)
+            this.updateHighScore();
+        return result;
     }
     // ADD RANDOM TILE IN EMPTY SLOT
     addRandomTile() {
@@ -186,10 +206,6 @@ class Game {
             }
         }
     }
-    // COUNT SCORE
-    updateScore() {
-        this.score = this.state.reduce((curr, prev) => curr + prev, 0);
-    }
     // ACTIONS FOR THE OUTSIDE WORLD
     move(aciton) {
         switch (aciton) {
@@ -213,6 +229,7 @@ class Game {
         this.checkIfLost();
         this.checkIfWon();
     }
+    // testing
     setState() {
         for (let i = 2, x = 0; i <= 2048; i *= 2, x++) {
             this.state[x] = i;
@@ -220,6 +237,11 @@ class Game {
     }
 }
 function addSwipeListeners(game) {
+    const gameContainer = document.getElementById("game");
+    if (!gameContainer) {
+        console.error('Game container not found');
+        return;
+    }
     let touchstartX = 0;
     let touchstartY = 0;
     let touchendX = 0;
@@ -249,11 +271,11 @@ function addSwipeListeners(game) {
             printStateOnTiles(cards, score, game);
         }
     }
-    document.addEventListener('touchstart', (e) => {
+    gameContainer.addEventListener('touchstart', (e) => {
         touchstartX = e.changedTouches[0].screenX;
         touchstartY = e.changedTouches[0].screenY;
     });
-    document.addEventListener('touchend', (e) => {
+    gameContainer.addEventListener('touchend', (e) => {
         touchendX = e.changedTouches[0].screenX;
         touchendY = e.changedTouches[0].screenY;
         handleGesture();
@@ -275,7 +297,7 @@ function getTileColor(value) {
         default: return "#cdc1b4";
     }
 }
-function printStateOnTiles(cards, score, game) {
+function printStateOnTiles(cards, score, highScore, game) {
     let currentState = game.getCurrentState();
     cards.forEach((card, i) => {
         if (currentState[i] !== 0) {
@@ -290,8 +312,10 @@ function printStateOnTiles(cards, score, game) {
     if (score) {
         score.innerText = game.getScore().toString();
     }
+    if (highscoreElement) {
+        highscoreElement.innerText = game.getHighScore().toString();
+    }
     if (!game.isGameActive()) {
-        console.log("its in");
         const popupMessage = document.getElementById('popupMessageContainer');
         const popupTitle = document.getElementById('popupTitle');
         const popupButton = document.getElementById('popupButton');
@@ -308,10 +332,19 @@ function printStateOnTiles(cards, score, game) {
     }
 }
 let game = new Game();
+const gameContainer = document.getElementById("game");
+if (gameContainer) {
+    for (let i = 0; i < 16; i++) {
+        let card = document.createElement("div");
+        card.classList.add("card");
+        gameContainer.appendChild(card);
+    }
+}
 const cards = document.querySelectorAll('.card');
-const score = document.getElementById('score');
-const newGameButton = document.getElementById('newGameBtn');
-printStateOnTiles(cards, score, game);
+const scoreElement = document.querySelector('#score');
+const highscoreElement = document.querySelector('#highScore');
+const newGameButton = document.querySelector('#newGameBtn');
+printStateOnTiles(cards, scoreElement, highscoreElement, game);
 addSwipeListeners(game);
 document.onkeydown = function (e) {
     if (game.isGameActive()) {
@@ -329,14 +362,14 @@ document.onkeydown = function (e) {
                 game.move(Moves.DOWN);
                 break;
         }
-        printStateOnTiles(cards, score, game);
+        printStateOnTiles(cards, scoreElement, highscoreElement, game);
     }
 };
 newGameButton === null || newGameButton === void 0 ? void 0 : newGameButton.addEventListener('click', (e) => {
     let confirmed = confirm("Are you sure.");
     if (confirmed) {
         game = new Game();
-        printStateOnTiles(cards, score, game);
+        printStateOnTiles(cards, scoreElement, highscoreElement, game);
         addSwipeListeners(game);
     }
 });

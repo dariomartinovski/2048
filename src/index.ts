@@ -14,6 +14,7 @@ class Game{
     private state: number[];
     private gameStatus: boolean;
     private score: number;
+    private highScore: number;
 
     // INITIAL STATE
     constructor(){
@@ -22,6 +23,7 @@ class Game{
         this.state = new Array(16).fill(0);
         this.gameStatus = true;
         this.score = 0;
+        this.highScore = parseInt(localStorage.getItem("highScore") || "0");
 
         // add random inital block value
         this.addRandomTile();
@@ -46,9 +48,28 @@ class Game{
     public getScore(): number{
         return this.score;
     }
+    // UPDATE THE SCORE
+    private updateScore(): void{
+        this.score = this.state.reduce((curr, prev) => curr+prev, 0);
+    }
+    // GET THE HIGHSCORE
+    public getHighScore(): number {
+        return this.highScore;
+    }
+    // UPDATE THE HIGHSCORE
+    private updateHighScore(): void {
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('highScore', this.highScore.toString());
+        }
+    }
     // CHECK IF GAME IS STILL ACTIVE
     public isGameActive(): boolean{
-        return this.gameStatus;
+        let result: boolean = this.gameStatus;
+        // UPDATE THE HIGHSCORE IF THE GAME IS FINISHED
+        if(!this.gameStatus)
+            this.updateHighScore();
+        return result;
     }
     // ADD RANDOM TILE IN EMPTY SLOT
     private addRandomTile() : void{
@@ -191,10 +212,6 @@ class Game{
             }
         }
     }
-    // COUNT SCORE
-    private updateScore(): void{
-        this.score = this.state.reduce((curr, prev) => curr+prev, 0);
-    }
     // ACTIONS FOR THE OUTSIDE WORLD
     public move(aciton: Moves): void{
         switch(aciton){
@@ -218,7 +235,7 @@ class Game{
         this.checkIfLost();
         this.checkIfWon();
     }
-
+    // testing
     public setState(): void{
         for(let i=2, x = 0; i<=2048; i*=2, x++){
             this.state[x] = i;
@@ -227,6 +244,13 @@ class Game{
 }
 
 function addSwipeListeners(game: Game) {
+    const gameContainer: HTMLElement | null = document.getElementById("game");
+
+    if (!gameContainer) {
+        console.error('Game container not found');
+        return;
+    }
+
     let touchstartX = 0;
     let touchstartY = 0;
     let touchendX = 0;
@@ -256,12 +280,12 @@ function addSwipeListeners(game: Game) {
         }
     }
 
-    document.addEventListener('touchstart', (e) => {
+    gameContainer.addEventListener('touchstart', (e) => {
         touchstartX = e.changedTouches[0].screenX;
         touchstartY = e.changedTouches[0].screenY;
     });
 
-    document.addEventListener('touchend', (e) => {
+    gameContainer.addEventListener('touchend', (e) => {
         touchendX = e.changedTouches[0].screenX;
         touchendY = e.changedTouches[0].screenY;
         handleGesture();
@@ -285,8 +309,9 @@ function getTileColor(value: number): string {
     }
 }
 
-function printStateOnTiles(cards: NodeListOf<HTMLDivElement>, score: HTMLElement | null, game: Game): void {
+function printStateOnTiles(cards: NodeListOf<HTMLDivElement>, score: HTMLElement | null, highScore: HTMLElement | null, game: Game): void {
     let currentState: number[] = game.getCurrentState();
+    
     cards.forEach((card, i) => {
         if (currentState[i] !== 0) {
             card.innerText = currentState[i].toString();
@@ -300,11 +325,15 @@ function printStateOnTiles(cards: NodeListOf<HTMLDivElement>, score: HTMLElement
         score.innerText = game.getScore().toString();
     }
 
+    if (highscoreElement) {
+        highscoreElement.innerText = game.getHighScore().toString();
+    }
+
     if (!game.isGameActive()) {
-        console.log("its in");
         const popupMessage = document.getElementById('popupMessageContainer');
         const popupTitle = document.getElementById('popupTitle');
         const popupButton = document.getElementById('popupButton');
+
         if (game.checkIfWon()) {
             popupTitle!.innerText = "Congratulations, you won!";
         } else if (game.checkIfLost()) {
@@ -318,11 +347,22 @@ function printStateOnTiles(cards: NodeListOf<HTMLDivElement>, score: HTMLElement
 }
 
 let game: Game = new Game();
-const cards: NodeListOf<HTMLDivElement> = document.querySelectorAll('.card');
-const score: HTMLElement | null = document.getElementById('score');
-const newGameButton: HTMLElement | null = document.getElementById('newGameBtn');
+const gameContainer: HTMLElement | null = document.getElementById("game");
 
-printStateOnTiles(cards, score, game);
+if(gameContainer){
+    for(let i=0; i<16; i++){
+        let card = document.createElement("div");
+        card.classList.add("card");
+        gameContainer.appendChild(card);
+    }
+}
+
+const cards: NodeListOf<HTMLDivElement> = document.querySelectorAll('.card');
+const scoreElement: HTMLSpanElement | null = document.querySelector<HTMLSpanElement>('#score');
+const highscoreElement: HTMLSpanElement | null = document.querySelector<HTMLSpanElement>('#highScore');
+const newGameButton : HTMLButtonElement | null = document.querySelector<HTMLButtonElement>('#newGameBtn');
+
+printStateOnTiles(cards, scoreElement, highscoreElement, game);
 addSwipeListeners(game);
 
 document.onkeydown = function(e) {
@@ -341,7 +381,7 @@ document.onkeydown = function(e) {
                 game.move(Moves.DOWN);
                 break;
         }
-        printStateOnTiles(cards, score, game);
+        printStateOnTiles(cards, scoreElement, highscoreElement, game);
     }
 };
 
@@ -349,7 +389,7 @@ newGameButton?.addEventListener('click', (e) => {
     let confirmed: boolean = confirm("Are you sure.");
     if(confirmed){
         game = new Game();
-        printStateOnTiles(cards, score, game);
+        printStateOnTiles(cards, scoreElement, highscoreElement, game);
         addSwipeListeners(game);
     }
 });
