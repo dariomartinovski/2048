@@ -51,6 +51,7 @@ class Game{
     // UPDATE THE SCORE
     private updateScore(): void{
         this.score = this.state.reduce((curr, prev) => curr+prev, 0);
+        this.updateHighScore();
     }
     // GET THE HIGHSCORE
     public getHighScore(): number {
@@ -243,7 +244,7 @@ class Game{
     }
 }
 
-function addSwipeListeners(game: Game) {
+function addSwipeListeners(game: Game, cards: NodeListOf<HTMLDivElement>, score: HTMLElement | null, highScore: HTMLElement | null) {
     const gameContainer: HTMLElement | null = document.getElementById("game");
 
     if (!gameContainer) {
@@ -276,7 +277,7 @@ function addSwipeListeners(game: Game) {
                     game.move(Moves.UP);
                 }
             }
-            printStateOnTiles(cards, score, game);
+            printStateOnTiles(cards, score, highScore, game);
         }
     }
 
@@ -309,7 +310,7 @@ function getTileColor(value: number): string {
     }
 }
 
-function printStateOnTiles(cards: NodeListOf<HTMLDivElement>, score: HTMLElement | null, highScore: HTMLElement | null, game: Game): void {
+function printStateOnTiles(cards: NodeListOf<HTMLDivElement>, score: HTMLElement | null, highscoreElement: HTMLElement | null, game: Game): void {
     let currentState: number[] = game.getCurrentState();
     
     cards.forEach((card, i) => {
@@ -363,7 +364,7 @@ const highscoreElement: HTMLSpanElement | null = document.querySelector<HTMLSpan
 const newGameButton : HTMLButtonElement | null = document.querySelector<HTMLButtonElement>('#newGameBtn');
 
 printStateOnTiles(cards, scoreElement, highscoreElement, game);
-addSwipeListeners(game);
+addSwipeListeners(game, cards, scoreElement, highscoreElement);
 
 document.onkeydown = function(e) {
     if(game.isGameActive()){
@@ -390,7 +391,7 @@ newGameButton?.addEventListener('click', (e) => {
     if(confirmed){
         game = new Game();
         printStateOnTiles(cards, scoreElement, highscoreElement, game);
-        addSwipeListeners(game);
+        addSwipeListeners(game, cards, scoreElement, highscoreElement);
     }
 });
 

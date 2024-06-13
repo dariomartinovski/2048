@@ -46,6 +46,7 @@ class Game {
     // UPDATE THE SCORE
     updateScore() {
         this.score = this.state.reduce((curr, prev) => curr + prev, 0);
+        this.updateHighScore();
     }
     // GET THE HIGHSCORE
     getHighScore() {
@@ -236,7 +237,7 @@ class Game {
         }
     }
 }
-function addSwipeListeners(game) {
+function addSwipeListeners(game, cards, score, highScore) {
     const gameContainer = document.getElementById("game");
     if (!gameContainer) {
         console.error('Game container not found');
@@ -268,7 +269,7 @@ function addSwipeListeners(game) {
                     game.move(Moves.UP);
                 }
             }
-            printStateOnTiles(cards, score, game);
+            printStateOnTiles(cards, score, highScore, game);
         }
     }
     gameContainer.addEventListener('touchstart', (e) => {
@@ -297,7 +298,7 @@ function getTileColor(value) {
         default: return "#cdc1b4";
     }
 }
-function printStateOnTiles(cards, score, highScore, game) {
+function printStateOnTiles(cards, score, highscoreElement, game) {
     let currentState = game.getCurrentState();
     cards.forEach((card, i) => {
         if (currentState[i] !== 0) {
@@ -345,7 +346,7 @@ const scoreElement = document.querySelector('#score');
 const highscoreElement = document.querySelector('#highScore');
 const newGameButton = document.querySelector('#newGameBtn');
 printStateOnTiles(cards, scoreElement, highscoreElement, game);
-addSwipeListeners(game);
+addSwipeListeners(game, cards, scoreElement, highscoreElement);
 document.onkeydown = function (e) {
     if (game.isGameActive()) {
         switch (e.keyCode) {
@@ -370,6 +371,6 @@ newGameButton === null || newGameButton === void 0 ? void 0 : newGameButton.addE
     if (confirmed) {
         game = new Game();
         printStateOnTiles(cards, scoreElement, highscoreElement, game);
-        addSwipeListeners(game);
+        addSwipeListeners(game, cards, scoreElement, highscoreElement);
     }
 });
